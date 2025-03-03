@@ -49,11 +49,9 @@ import CoinBucket from './CoinBucket.vue';
   display: grid;
   grid-template-columns: repeat(3, 33%);
   grid-template-rows: repeat(1, 100%);
-  min-width: 100%;
-  min-height:calc(100vh - 200px);
+  min-width: calc(100vw - 120px);
+  min-height: calc(100vh - 200px);
   column-gap: 1em;
-  overflow-x: hidden;
-  overflow-y: auto;
  }
 
 </style>
