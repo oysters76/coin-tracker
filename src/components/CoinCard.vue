@@ -46,6 +46,7 @@ import { computed } from 'vue';
   min-height: 6em;
   gap: 0.2em;
   box-shadow: rgba(99, 99, 99, 0.2) 0px 2px 8px 0px;
+  transition: background 2s;
  }
 
  .coin > img{

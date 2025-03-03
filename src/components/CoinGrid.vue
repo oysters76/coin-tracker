@@ -1,51 +1,67 @@
 <script setup lang="ts">
- import { computed } from 'vue';
- import { useWebSocket } from '../utils/coinWebsocket';
- import CoinBucket from './CoinBucket.vue';
- import { coinsStore } from '../stores/coinsStore';
+
+import { watch, computed, onMounted, onBeforeUnmount } from 'vue';
+import { useWebSocket } from '@vueuse/core'
+import CoinBucket from './CoinBucket.vue';
 import { userPrefStore } from '../stores/userPreferenceStore';
+import { coinsStore } from "../stores/coinsStore";
+import type { Coin } from "../types/Coin";
+import type { WebSocketCoin } from "../types/WebSocketCoin";
  
- const coinStore = coinsStore();
- const userStore = userPrefStore(); 
+const coinStore = coinsStore();
+const userPreferenceStore = userPrefStore(); 
 
- const coinList = computed(() => coinStore.coinList);
+const { status, data, close } = useWebSocket('ws://localhost:8000/ws', {
+  autoReconnect: true,
+})
+
+watch(data, (newData)=>{
+  const webSocketCoinList = JSON.parse(data.value) as WebSocketCoin[]; 
+  if (!webSocketCoinList) return;
+  const coinList = webSocketCoinList.map(webSocketCoin=>{
+    return {
+      coinSymbol:webSocketCoin.symbol.toUpperCase(), 
+      coinImgSrc:webSocketCoin.image, 
+      coinPrice:Math.abs(webSocketCoin.price), 
+      isPositive:webSocketCoin.isPositive
+    } as Coin
+  }); 
+  coinStore.updateCoinList(coinList);
+}, {deep:true, immediate:true});
+
+ const trackedCoins = computed(()=>{
+   return userPreferenceStore.coinsTracked.map((index)=>{
+    return coinStore.coinList[index] || 
+       {coinSymbol:"Loading", coinImgSrc:"", coinPrice:0, isPositive:false};
+   }) || [];
+ }); 
  
- const trackedUserCoins = computed(()=>{
-   return userStore.coinsTracked || [];
- });
  const alertAboveCoins = computed(()=>{
-   return userStore.coinsAbove || [];
- });
+   return userPreferenceStore.coinsAbove.map((index)=>{
+    return coinStore.coinList[index] || 
+       {coinSymbol:"Loading", coinImgSrc:"", coinPrice:0, isPositive:false};
+   }) || [];
+ }); 
+ 
  const alertBelowCoins = computed(()=>{
-   return userStore.coinsBelow || [];
+   return userPreferenceStore.coinsBelow.map((index)=>{
+    return coinStore.coinList[index] || 
+       {coinSymbol:"Loading", coinImgSrc:"", coinPrice:0, isPositive:false};
+   }) || [];
+ }); 
+ 
+
+ onBeforeUnmount(() => {
+   close();
  });
 
- const coinListTracked = computed(()=>{
-   return trackedUserCoins.value.map(coinIndex=>{
-      return coinList.value[coinIndex];
-   }) || [];
- })
-
- const coinListAbove = computed(()=>{
-   return alertAboveCoins.value.map(coinIndex=>{
-      return coinList.value[coinIndex];
-   }) || [];
- })
-
- const coinListBelow = computed(()=>{
-   return alertBelowCoins.value.map(coinIndex=>{
-      return coinList.value[coinIndex];
-   })|| [];
- })
-
- useWebSocket();
 </script>
 
 <template>
    <main class="coin-bucket-container">
-      <CoinBucket title="Tracked Coins" bucketType="tracked" :coins="coinListTracked"></CoinBucket>
-      <CoinBucket title="Alert if price above 30" bucketType="above" :coins="coinListAbove"></CoinBucket>
-      <CoinBucket title="Alert if price below 30" bucketType="below" :coins="coinListBelow"></CoinBucket>
+      <CoinBucket title="Tracked Coins" bucketType="tracked" :coins="trackedCoins"></CoinBucket>
+      <CoinBucket title="Alert if price above $30" bucketType="above" :coins="alertAboveCoins"></CoinBucket>
+      <CoinBucket title="Alert if price below $30" bucketType="below" :coins="alertBelowCoins"></CoinBucket>
    </main>
 </template>
 
