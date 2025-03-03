@@ -1,17 +1,36 @@
 <script setup lang="ts">
- defineProps({
-    symbol:string, 
+import { computed } from 'vue';
+
+ const props = defineProps<{
+    symbol:String, 
     imgUrl:string, 
     price:number, 
-    isPositive:boolean
- }); 
+    isPositive:Boolean
+ }>(); 
+
+ const classesToApply = computed(()=>{
+   return {
+      coin:true, 
+      coinPositive:props.isPositive,
+      coinNegative:!props.isPositive 
+   }
+ });
+ const formatter = new Intl.NumberFormat('en-US', {
+     style: 'currency',
+     currency: 'USD',
+     minimumFractionDigits: 0,
+     maximumFractionDigits: 0, 
+ });
+ const priceCurrency = computed(()=>{
+   return formatter.format(props.price);
+ })
 </script>
 
 <template>
-   <div :class="{coin:true, coinPositive:isPositive, coinNegative:!isPositive}">
-     <label class="coin-symbol">{{ symbol }}</label>
-     <img src="{{ imgUrl }}" />
-     <label class="coin-price">{{ price }}</label>
+   <div :class="classesToApply">
+     <label class="coin-symbol">{{ props.symbol }}</label>
+     <img :src="props.imgUrl" />
+     <label class="coin-price">{{ priceCurrency }}</label>
     </div>
 </template>
 
