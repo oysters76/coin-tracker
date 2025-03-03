@@ -1,46 +1,51 @@
 <script setup lang="ts">
- import type { Coin } from '../types/Coin';
-import CoinBucket from './CoinBucket.vue';
+ import { computed } from 'vue';
+ import { useWebSocket } from '../utils/coinWebsocket';
+ import CoinBucket from './CoinBucket.vue';
+ import { coinsStore } from '../stores/coinsStore';
+import { userPrefStore } from '../stores/userPreferenceStore';
+ 
+ const coinStore = coinsStore();
+ const userStore = userPrefStore(); 
 
- const coinList:Coin[] = [
-  {
-    coinSymbol:"BTC", 
-    coinImgSrc:"https://coin-images.coingecko.com/coins/images/11610/large/Bitget_logo.png?1736925727",
-    coinPrice:2340, 
-    isPositive:true
-  },
-  {
-    coinSymbol:"BTC", 
-    coinImgSrc:"https://coin-images.coingecko.com/coins/images/11610/large/Bitget_logo.png?1736925727",
-    coinPrice:2340, 
-    isPositive:false
-  },
-  {
-    coinSymbol:"BTC", 
-    coinImgSrc:"https://coin-images.coingecko.com/coins/images/11610/large/Bitget_logo.png?1736925727",
-    coinPrice:2340, 
-    isPositive:true
-  },
-  {
-    coinSymbol:"BTC", 
-    coinImgSrc:"https://coin-images.coingecko.com/coins/images/11610/large/Bitget_logo.png?1736925727",
-    coinPrice:2340, 
-    isPositive:true
-  },
-  {
-    coinSymbol:"BTC", 
-    coinImgSrc:"https://coin-images.coingecko.com/coins/images/11610/large/Bitget_logo.png?1736925727",
-    coinPrice:2340, 
-    isPositive:true
-  }
- ]
+ const coinList = computed(() => coinStore.coinList);
+ 
+ const trackedUserCoins = computed(()=>{
+   return userStore.coinsTracked || [];
+ });
+ const alertAboveCoins = computed(()=>{
+   return userStore.coinsAbove || [];
+ });
+ const alertBelowCoins = computed(()=>{
+   return userStore.coinsBelow || [];
+ });
+
+ const coinListTracked = computed(()=>{
+   return trackedUserCoins.value.map(coinIndex=>{
+      return coinList.value[coinIndex];
+   }) || [];
+ })
+
+ const coinListAbove = computed(()=>{
+   return alertAboveCoins.value.map(coinIndex=>{
+      return coinList.value[coinIndex];
+   }) || [];
+ })
+
+ const coinListBelow = computed(()=>{
+   return alertBelowCoins.value.map(coinIndex=>{
+      return coinList.value[coinIndex];
+   })|| [];
+ })
+
+ useWebSocket();
 </script>
 
 <template>
    <main class="coin-bucket-container">
-      <CoinBucket title="Tracked Coins" bucketType="tracked" :coins="coinList"></CoinBucket>
-      <CoinBucket title="Alert if above" bucketType="above" :coins="coinList"></CoinBucket>
-      <CoinBucket title="Alert if below" bucketType="below" :coins="coinList"></CoinBucket>
+      <CoinBucket title="Tracked Coins" bucketType="tracked" :coins="coinListTracked"></CoinBucket>
+      <CoinBucket title="Alert if price above 30" bucketType="above" :coins="coinListAbove"></CoinBucket>
+      <CoinBucket title="Alert if price below 30" bucketType="below" :coins="coinListBelow"></CoinBucket>
    </main>
 </template>
 
